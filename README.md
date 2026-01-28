@@ -226,12 +226,8 @@ Stage-specific configurations are available in `configs/stages/`:
 - SSIM Loss: Structural similarity
 - Adversarial Loss: GAN training for realism
 
-## Future Improvements
-
-- Support for real-world degradations (noise, blur, compression)
-- Higher scale factors (8×, 16×)
-- Lightweight model variants for mobile deployment
-- Video super-resolution extension
+# Models link download
+[models](https://drive.google.com/file/d/1Oy2Ig-n5M8JaJV26z4pQi5S2wZ8v3-7D/view?usp=sharing)
 
 ## License
 
