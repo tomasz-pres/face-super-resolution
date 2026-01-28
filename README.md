@@ -212,13 +212,6 @@ Stage-specific configurations are available in `configs/stages/`:
 - Model architecture parameters
 - Fully reproducible training pipeline
 
-## Model Checkpoints
-
-Due to GitHub file size limits, model checkpoints are not included in the repository. To use pre-trained models:
-1. Download from [GitHub Releases](#) (coming soon)
-2. Place in `checkpoints/` directory
-3. Run demo or evaluation scripts
-
 ## Technical Details
 
 **Training Platform:** RunPod
@@ -246,21 +239,8 @@ MIT License
 
 ## Acknowledgments
 
-- **FFHQ Dataset:** [NVlabs/ffhq-dataset](https://github.com/NVlabs/ffhq-dataset)
+- **FFHQ Dataset:** [ffhq-dataset](https://www.kaggle.com/datasets/xhlulu/flickrfaceshq-dataset-nvidia-resized-256px)
+
 - **RCAN Paper:** Zhang et al. "Image Super-Resolution Using Very Deep Residual Channel Attention Networks" (ECCV 2018)
 - **ESRGAN Paper:** Wang et al. "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks" (ECCV 2018)
 - **Perceptual Loss:** Johnson et al. "Perceptual Losses for Real-Time Style Transfer and Super-Resolution" (ECCV 2016)
-
-## Citation
-
-If you use this project in your research, please cite:
-
-```bibtex
-@misc{face-super-resolution,
-  author = {Tomasz Pres},
-  title = {Face Super-Resolution with Deep Learning},
-  year = {2026},
-  publisher = {GitHub},
-  url = {https://github.com/tomasz-pres/face-super-resolution}
-}
-```

@@ -34,16 +34,10 @@ services:
       - "7860:7860"
     volumes:
       - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
     environment:
       - GRADIO_SERVER_NAME=0.0.0.0
     command: python app/demo.py
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
   # FastAPI service
   api:

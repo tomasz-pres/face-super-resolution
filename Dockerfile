@@ -19,7 +19,10 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Ensure NumPy 1.x for PyTorch compatibility
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir "numpy>=1.24.0,<2.0.0" && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy only necessary application files
 COPY src/ ./src/

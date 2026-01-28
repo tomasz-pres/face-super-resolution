@@ -607,4 +607,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     demo = create_demo()
-    demo.launch(share=args.share, server_port=args.port, show_api=False)
+    demo.launch(share=args.share, server_port=args.port)
