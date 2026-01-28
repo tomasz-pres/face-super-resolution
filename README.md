@@ -174,12 +174,11 @@ face-super-resolution/
 ├── app/
 │   └── demo.py              # Gradio demo application
 ├── configs/
-│   ├── config.yaml          # Main training config
+│   ├── transfer_config.yaml          # Main training config
 │   └── stages/              # Stage-specific configs
 │       ├── stage1_psnr_config.yaml
 │       ├── stage2_ssim_config.yaml
-│       ├── stage3_gan_config.yaml
-│       └── training_pipeline.yaml
+│       └── stage3_gan_config.yaml
 ├── src/
 │   ├── models/              # FaceEnhanceNet architecture
 │   ├── losses/              # Loss functions (L1, Perceptual, SSIM, GAN)
@@ -190,6 +189,7 @@ face-super-resolution/
 │   ├── train.py             # Training script
 │   ├── compare_two_models.py # Model comparison
 │   ├── plot_training_stages.py # Training visualization
+│   ├── split_data.py # Training visualization
 │   └── extract_configs.py   # Config extraction from checkpoints
 ├── reports/
 │   └── figures/             # Training plots and visualizations
