@@ -26,7 +26,7 @@ from skimage.metrics import structural_similarity as ssim
 from tqdm import tqdm
 import lpips
 
-from src.models import create_face_enhance_net
+from src.models import create_face_enhance_net, create_transfer_model
 
 
 # OpenCV interpolation methods for baseline comparison
@@ -127,14 +127,24 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
     else:
         state_dict = checkpoint
 
-    model_config = infer_model_config_from_state_dict(state_dict)
+    # Detect model type from keys
+    first_key = list(state_dict.keys())[0]
 
-    model = create_face_enhance_net(**model_config)
-    model.load_state_dict(state_dict)
-    model = model.to(device)
-    model.eval()
-
-    return model, model_config
+    if first_key.startswith('backbone.'):
+        # TransferSRModel
+        model = create_transfer_model()
+        model.load_state_dict(state_dict)
+        model = model.to(device)
+        model.eval()
+        return model, {'type': 'transfer'}
+    else:
+        # FaceEnhanceNet
+        model_config = infer_model_config_from_state_dict(state_dict)
+        model = create_face_enhance_net(**model_config)
+        model.load_state_dict(state_dict)
+        model = model.to(device)
+        model.eval()
+        return model, model_config
 
 
 def generate_lr(hr_image: np.ndarray, scale_factor: int = 4) -> np.ndarray:

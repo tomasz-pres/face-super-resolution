@@ -23,13 +23,11 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
 from src.models import create_face_enhance_net
-from src.explainability import GradCAM, apply_heatmap
 
 
 # Global models (loaded once)
 _models = {}
 _lpips_model = None
-_gradcam_cache = {}  # Cache GradCAM objects per model
 
 
 def get_device():
@@ -201,47 +199,6 @@ def generate_lr(hr_image: np.ndarray, scale_factor: int = 4) -> np.ndarray:
 def upscale_opencv(lr_image: np.ndarray, target_size: Tuple[int, int], method: int) -> np.ndarray:
     """Upscale using OpenCV interpolation."""
     return cv2.resize(lr_image, target_size, interpolation=method)
-
-
-def generate_gradcam(
-    lr_image: np.ndarray,
-    model_name: str,
-    region: str = 'full'
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Generate GradCAM visualization.
-
-    Returns:
-        Tuple of (heatmap_overlay, sr_image)
-    """
-    global _gradcam_cache
-    device = get_device()
-
-    if model_name not in _models:
-        return None, None
-
-    model = _models[model_name]
-
-    # Get or create GradCAM for this model
-    if model_name not in _gradcam_cache:
-        _gradcam_cache[model_name] = GradCAM(model, ['residual_groups'])
-
-    gradcam = _gradcam_cache[model_name]
-
-    # Prepare input (expects RGB)
-    lr_rgb = lr_image if lr_image.shape[2] == 3 else cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
-    lr_tensor = torch.from_numpy(lr_rgb).float().permute(2, 0, 1).unsqueeze(0) / 255.0
-    lr_tensor = lr_tensor.to(device)
-
-    # Generate CAM
-    heatmap, sr_image = gradcam.generate_cam(lr_tensor, target_region=region)
-
-    # Create overlay on upscaled LR
-    lr_display = cv2.resize(lr_rgb, (256, 256), interpolation=cv2.INTER_NEAREST)
-    heatmap_resized = cv2.resize(heatmap, (256, 256))
-    overlay = apply_heatmap(lr_display, heatmap_resized, alpha=0.5)
-
-    return overlay, sr_image
 
 
 def upscale_model(lr_image: np.ndarray, model: torch.nn.Module, device: str = None) -> np.ndarray:
@@ -510,29 +467,6 @@ def create_demo():
                     interactive=False
                 )
 
-        # GradCAM Section
-        gr.Markdown("---")
-        gr.Markdown("### GradCAM Explainability")
-        gr.Markdown("""
-        **GradCAM** (Gradient-weighted Class Activation Mapping) visualizes which input regions
-        the model focuses on when generating the super-resolved output. Warmer colors (red/yellow)
-        indicate higher attention.
-        """)
-
-        with gr.Row():
-            with gr.Column(scale=1):
-                gradcam_region = gr.Dropdown(
-                    choices=["full", "center", "eyes", "mouth"],
-                    value="full",
-                    label="Target Region"
-                )
-                gradcam_btn = gr.Button("Generate GradCAM", variant="secondary")
-
-            with gr.Column(scale=2):
-                with gr.Row():
-                    gradcam_output = gr.Image(label="Attention Heatmap", type="numpy")
-                    gradcam_sr = gr.Image(label="SR Output", type="numpy")
-
         # Examples section
         gr.Markdown("---")
         gr.Markdown("### About the Metrics")
@@ -552,31 +486,6 @@ def create_demo():
             img = load_sample_image(sample_name)
             return img
 
-        def on_gradcam(input_image, model_name, region):
-            if input_image is None:
-                return None, None
-
-            # Convert from RGB (Gradio) to BGR (OpenCV)
-            input_bgr = cv2.cvtColor(input_image, cv2.COLOR_RGB2BGR)
-
-            # Center crop and resize
-            h, w = input_bgr.shape[:2]
-            if h != 256 or w != 256:
-                min_dim = min(h, w)
-                top = (h - min_dim) // 2
-                left = (w - min_dim) // 2
-                input_bgr = input_bgr[top:top + min_dim, left:left + min_dim]
-                input_bgr = cv2.resize(input_bgr, (256, 256), interpolation=cv2.INTER_AREA)
-
-            # Generate LR
-            lr_bgr = generate_lr(input_bgr, scale_factor=4)
-            lr_rgb = cv2.cvtColor(lr_bgr, cv2.COLOR_BGR2RGB)
-
-            # Generate GradCAM
-            overlay, sr_image = generate_gradcam(lr_rgb, model_name, region)
-
-            return overlay, sr_image
-
         load_sample_btn.click(
             fn=on_load_sample,
             inputs=[sample_dropdown],
@@ -587,12 +496,6 @@ def create_demo():
             fn=process_image,
             inputs=[input_image, model_dropdown, show_bicubic, show_lanczos],
             outputs=[lr_output, sr_output, comparison_output, metrics_output]
-        )
-
-        gradcam_btn.click(
-            fn=on_gradcam,
-            inputs=[input_image, model_dropdown, gradcam_region],
-            outputs=[gradcam_output, gradcam_sr]
         )
 
     return demo

@@ -89,9 +89,9 @@ def main():
                         help='Path to config file')
 
     # Model
-    parser.add_argument('--model', type=str, default='custom',
+    parser.add_argument('--model', type=str, default=None,
                         choices=['custom', 'transfer', 'esrgan'],
-                        help='Model type to train')
+                        help='Model type to train (default: from config)')
 
     # Data
     parser.add_argument('--data-root', type=str, default='data/processed',
