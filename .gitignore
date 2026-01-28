@@ -100,4 +100,6 @@ package-lock.json
 .taskmaster/
 .mcp.json
 PRD_SuperResolution_FFHQ.md
+CLAUDE.md
+REPORT_STUDY_GUIDE.md
 REPORT.md
