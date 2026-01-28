@@ -1,0 +1,78 @@
+# =============================================================================
+# Transfer Learning Model - Training Configuration
+# =============================================================================
+
+project:
+  name: "face-sr-transfer"
+  seed: 42
+  device: "cuda"
+
+data:
+  data_root: "./data/processed/"
+  hr_size: 256
+  lr_size: 64
+  scale_factor: 4
+  batch_size: 32  # Can use larger batch since fewer trainable params
+  num_workers: 16
+  pin_memory: true
+
+augmentation:
+  horizontal_flip: 0.5
+  random_rotate90: 0.0
+  random_crop:
+    hr_patch_size: 256
+    lr_patch_size: 64
+
+model:
+  type: "transfer"
+
+  transfer:
+    backbone_blocks: 16
+    freeze_blocks: 16
+    head_blocks: 4
+    head_channels: 64
+
+loss:
+  l1_weight: 1.0
+  perceptual_weight: 0.5
+  ssim_weight: 0.0
+
+  use_charbonnier: false
+
+  perceptual:
+    layers: ["conv3_4"]
+    normalize: true
+
+training:
+  epochs: 30
+  optimizer:
+    type: "adam"
+    lr: 2.0e-4  # Higher LR for head-only training
+    weight_decay: 0.0
+    betas: [0.9, 0.999]
+
+  scheduler:
+    type: "cosine"
+    T_max: 30
+    eta_min: 1.0e-6
+
+  gradient_clip: 1.0
+  accumulation_steps: 1
+  mixed_precision: true
+
+  early_stopping:
+    patience: 15
+    metric: "val_psnr"
+    mode: "max"
+
+checkpoint:
+  save_dir: "./checkpoints/transfer"
+  save_every: 5
+  save_best: true
+
+logging:
+  wandb:
+    enabled: false
+    project: "face-sr-transfer"
+  console:
+    log_every: 50

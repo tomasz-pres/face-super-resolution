@@ -1,0 +1,79 @@
+# =============================================================================
+# Face Super-Resolution - Docker Compose Configuration
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # Training service
+  training:
+    build: .
+    runtime: nvidia
+    volumes:
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./outputs:/app/outputs
+      - ./configs:/app/configs
+    environment:
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - CUDA_VISIBLE_DEVICES=0
+    shm_size: '8gb'
+    command: python scripts/train.py --config configs/config.yaml
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Gradio demo service
+  demo:
+    build: .
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./checkpoints:/app/checkpoints
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+    command: python app/demo.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # FastAPI service
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./checkpoints:/app/checkpoints
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Evaluation service
+  evaluate:
+    build: .
+    runtime: nvidia
+    volumes:
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./outputs:/app/outputs
+    command: python scripts/evaluate.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

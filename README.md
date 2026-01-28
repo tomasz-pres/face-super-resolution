@@ -1,63 +1,105 @@
-# Face Image Super-Resolution using FFHQ Dataset
+# Face Super-Resolution with Deep Learning
 
-A deep learning project for 4x face image super-resolution, upscaling 64x64 images to 256x256 with enhanced detail and perceptual quality.
+A deep learning project for 4x face image super-resolution (64×64 → 256×256) with focus on **perceptual quality and photorealism**. Uses a custom FaceEnhanceNet architecture with Channel Attention and three-stage training strategy combining PSNR optimization with GAN fine-tuning.
 
-## Project Overview
+## Highlights
 
-This project implements Single Image Super-Resolution (SISR) specialized for human face images using the FFHQ dataset. Three model architectures are compared:
+- **5x better perceptual quality** than bicubic baseline (LPIPS: 0.0695 vs 0.37)
+- Custom architecture with Channel Attention mechanism
+- Three-stage progressive training (PSNR → SSIM → GAN)
+- Trained on 70,000 high-quality face images from FFHQ dataset
+- Interactive Gradio demo with live metrics
+- Docker deployment ready
 
-1. **Baseline ESRGAN** - Pre-trained model for benchmark comparison
-2. **Transfer Learning** - Fine-tuned ESRGAN backbone with face-specific head
-3. **Custom FaceEnhanceNet** - Novel architecture with Channel Attention mechanism
+## Model Architecture
 
-### Target Metrics
-- PSNR: >= 28 dB
-- SSIM: >= 0.85
-- LPIPS: <= 0.15
-- Inference: < 100ms on GPU
+**FaceEnhanceNet** - Custom architecture optimized for face super-resolution:
 
-## Project Structure
+- **6 Residual Groups** with **10 RCAB blocks** each (60 blocks total)
+- **Channel Attention** mechanism for adaptive feature recalibration
+- **64 feature channels** throughout the network
+- **PixelShuffle upsampling** (2×→2× cascade for 4× total)
+- Progressive training strategy for optimal perceptual quality
 
-```
-face-super-resolution/
-├── configs/              # Training configurations
-├── data/                 # Dataset (DVC tracked)
-│   ├── raw/              # Original FFHQ images
-│   └── processed/        # LR-HR pairs
-├── src/                  # Source code
-│   ├── data/             # Dataset classes
-│   ├── models/           # Model architectures
-│   ├── losses/           # Loss functions
-│   ├── training/         # Training utilities
-│   ├── evaluation/       # Metrics and visualization
-│   └── utils/            # Helper functions
-├── scripts/              # Training and evaluation scripts
-├── notebooks/            # Jupyter notebooks
-├── app/                  # Gradio demo application
-├── checkpoints/          # Model checkpoints
-├── outputs/              # Generated outputs
-└── tests/                # Unit tests
-```
+### Key Components
 
-## Requirements
+1. **Residual Channel Attention Blocks (RCAB)**
+   - Two 3×3 convolutions with ReLU
+   - Squeeze-and-Excitation style channel attention (reduction ratio: 4)
+   - Residual connections for gradient flow
 
-### Hardware
-- NVIDIA GPU with >= 8GB VRAM (recommended: 16GB)
-- 32GB RAM
-- 100GB disk space for dataset
+2. **Upsampling Module**
+   - Two-stage PixelShuffle: 64×64 → 128×128 → 256×256
+   - Learned upsampling filters for better quality
 
-### Software
-- Python >= 3.10
-- CUDA >= 11.8
-- Docker (optional)
+## Training Strategy
+
+### Three-Stage Progressive Training (170 epochs total)
+
+**Stage 1: PSNR Pre-training (Epochs 0-99)**
+- Focus: Pixel-level reconstruction accuracy
+- Loss: L1 (1.0) + Perceptual (1.0)
+- Learning rate: 1e-4 with Cosine Annealing
+- Result: Good PSNR, but outputs lack fine details
+
+**Stage 2: SSIM Fine-tuning (Epochs 100-149)**
+- Focus: Structural similarity
+- Loss: L1 (1.0) + Perceptual (0.5) + SSIM (0.2)
+- Learning rate: 1e-5
+- Result: Did not bring significant improvements
+
+**Stage 3: GAN Fine-tuning (Epochs 150-169)**
+- Focus: Perceptual quality and photorealism
+- Loss: L1 (0.01) + Perceptual (1.0) + Adversarial (0.005)
+- Learning rate: 1e-4
+- Result: **Major perceptual quality improvements (LPIPS: 0.0695)**
+
+### The Perception-Distortion Trade-off
+
+Traditional metrics (PSNR, SSIM) measure pixel-level accuracy but don't correlate well with human perception. Our GAN-trained model demonstrates this trade-off:
+- Similar PSNR to baselines (~26 dB)
+- **5× better LPIPS** (perceptual similarity)
+- Sharper details, realistic textures, better facial features
+
+## Dataset
+
+**FFHQ (Flickr-Faces-HQ)** - NVIDIA 256px version
+- 70,000 high-quality aligned face images (256×256)
+- Split: 60,000 train / 5,000 val / 5,000 test
+- **On-the-fly LR generation** using bicubic downsampling
+- Data augmentation: Horizontal flip (50%)
+
+On-the-fly generation ensures the model never sees the exact same LR-HR pair twice, improving generalization.
+
+## Results
+
+Evaluation on **4,970 test images**:
+
+| Method | PSNR (dB) | SSIM | LPIPS | Notes |
+|--------|-----------|------|-------|-------|
+| **Baseline Methods** |||||
+| Bilinear | 26.43 | 0.7843 | 0.3407 | - |
+| Bicubic | 26.31 | 0.7861 | 0.3716 | - |
+| Lanczos4 | 26.10 | 0.7754 | 0.3883 | - |
+| **Deep Learning Models** |||||
+| Transfer Learning | 26.97 | 0.7940 | 0.1081 | Beats baselines on all metrics |
+| **Custom (GAN)** | **26.39** | **0.7734** | **0.0695** | **5× better perceptual quality** |
+
+**Key Finding:** Despite similar PSNR to baselines, my GAN model achieves dramatically better perceptual quality (LPIPS 0.0695 vs ~0.37 for baselines), producing photorealistic results with sharp details and realistic textures.
 
 ## Installation
 
-### Option 1: Local Installation
+### Prerequisites
+
+- Python >= 3.10
+- CUDA >= 11.8 (for GPU training/inference)
+- NVIDIA GPU with >= 8GB VRAM (recommended)
+
+### Local Setup
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/face-super-resolution.git
+git clone https://github.com/tomasz-pres/face-super-resolution.git
 cd face-super-resolution
 
 # Create virtual environment
@@ -69,143 +111,134 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### Option 2: Docker
+### Docker Setup
 
 ```bash
-# Build image
-docker build -t face-sr .
-
-# Run training
-docker-compose up training
-
-# Run demo
+# Build and run demo
 docker-compose up demo
+
+# Access at http://localhost:7860
 ```
 
-## Dataset Preparation
+## Usage
 
-### Download FFHQ
+### Interactive Demo
 
 ```bash
-# Option 1: Kaggle
-kaggle datasets download -d arnaud58/flickrfaceshq-dataset-ffhq
-unzip flickrfaceshq-dataset-ffhq.zip -d data/raw/
-
-# Option 2: Official script
-git clone https://github.com/NVlabs/ffhq-dataset.git
-cd ffhq-dataset && python download_ffhq.py --images
+python app/demo.py
 ```
 
-### Prepare LR-HR Pairs
+Open http://localhost:7860 in your browser. Features:
+- Upload any face image or select from validation samples
+- Real-time super-resolution processing
+- Side-by-side comparison with Bicubic and Lanczos4
+- Live PSNR, SSIM, and LPIPS metrics
+
+### Training
+
+Reproduce the three-stage training:
 
 ```bash
-python src/data/prepare_data.py \
-    --input data/raw/ffhq \
-    --output data/processed \
-    --hr-size 256 \
-    --lr-size 64 \
-    --degradation bicubic
+# Stage 1: PSNR Pre-training (100 epochs)
+python scripts/train.py --config configs/stages/stage1_psnr_config.yaml
+
+# Stage 2: SSIM Fine-tuning (50 epochs)
+python scripts/train.py --config configs/stages/stage2_ssim_config.yaml
+
+# Stage 3: GAN Fine-tuning (20 epochs)
+python scripts/train.py --config configs/stages/stage3_gan_config.yaml
 ```
 
-## Training
+### Model Comparison
 
-### Train Custom Model
+Compare multiple models on test set:
 
 ```bash
-python scripts/train.py --config configs/config.yaml
+python scripts/compare_two_models.py \
+    --test-dir data/processed/test/HR \
+    --save-every 5  # Save every 5th comparison image
 ```
 
-### Train with Specific Model
+### Visualize Training
+
+Generate training stage plots:
 
 ```bash
-# Custom FaceEnhanceNet
-python scripts/train.py --config configs/config.yaml --model custom
-
-# Transfer Learning
-python scripts/train.py --config configs/config.yaml --model transfer
+python scripts/plot_training_stages.py
 ```
 
-### Monitor Training
+## Project Structure
 
-Training progress is logged to Weights & Biases. Set your API key:
-
-```bash
-export WANDB_API_KEY=your_api_key
-wandb login
+```
+face-super-resolution/
+├── app/
+│   └── demo.py              # Gradio demo application
+├── configs/
+│   ├── config.yaml          # Main training config
+│   └── stages/              # Stage-specific configs
+│       ├── stage1_psnr_config.yaml
+│       ├── stage2_ssim_config.yaml
+│       ├── stage3_gan_config.yaml
+│       └── training_pipeline.yaml
+├── src/
+│   ├── models/              # FaceEnhanceNet architecture
+│   ├── losses/              # Loss functions (L1, Perceptual, SSIM, GAN)
+│   ├── training/            # Training utilities
+│   ├── evaluation/          # Metrics (PSNR, SSIM, LPIPS)
+│   └── data/                # Dataset classes
+├── scripts/
+│   ├── train.py             # Training script
+│   ├── compare_two_models.py # Model comparison
+│   ├── plot_training_stages.py # Training visualization
+│   └── extract_configs.py   # Config extraction from checkpoints
+├── reports/
+│   └── figures/             # Training plots and visualizations
+├── outputs/
+│   └── compare_models/
+│       └── samples/         # Comparison images
+├── checkpoints/             # Model weights (not in repo)
+├── data/                    # Dataset (not in repo)
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
 ```
 
-## Evaluation
+## Configuration
 
-```bash
-python scripts/evaluate.py \
-    --checkpoint checkpoints/best_model.pth \
-    --test-dir data/processed/test
-```
+Stage-specific configurations are available in `configs/stages/`:
+- Complete hyperparameters for each training stage
+- Loss weights and learning rate schedules
+- Model architecture parameters
+- Fully reproducible training pipeline
 
-## Demo
+## Model Checkpoints
 
-### Gradio Interface
+Due to GitHub file size limits, model checkpoints are not included in the repository. To use pre-trained models:
+1. Download from [GitHub Releases](#) (coming soon)
+2. Place in `checkpoints/` directory
+3. Run demo or evaluation scripts
 
-```bash
-python app/gradio_app.py
-```
+## Technical Details
 
-Access the demo at `http://localhost:7860`
+**Training Platform:** RunPod
+**Total Training Time:** 170 epochs
+**Batch Size:** 48
+**Optimizer:** Adam
+**Hardware:** NVIDIA GPU with CUDA support
 
-### Single Image Inference
+**Loss Functions:**
+- L1 Loss: Pixel-wise reconstruction
+- Perceptual Loss: VGG19 feature matching
+- SSIM Loss: Structural similarity
+- Adversarial Loss: GAN training for realism
 
-```bash
-python scripts/inference.py \
-    --input path/to/image.jpg \
-    --output path/to/output.jpg \
-    --checkpoint checkpoints/best_model.pth
-```
+## Future Improvements
 
-## Model Architectures
-
-### FaceEnhanceNet (Custom)
-
-- 8 Residual Channel Attention Blocks (RCAB)
-- SE-style channel attention mechanism
-- PixelShuffle upsampling (2x 2x stages)
-- ~2.1M parameters
-
-### Loss Functions
-
-1. **L1 Loss** - Pixel-wise reconstruction
-2. **Perceptual Loss** - VGG19 feature matching
-3. **SSIM Loss** - Structural similarity
-4. **Combined Loss** - Weighted combination
-
-## Results
-
-| Model | PSNR (dB) | SSIM | LPIPS | Params | Inference |
-|-------|-----------|------|-------|--------|-----------|
-| Bicubic | ~24.0 | ~0.70 | ~0.40 | 0 | - |
-| ESRGAN (baseline) | ~27.5 | ~0.82 | ~0.18 | 16.7M | ~50ms |
-| Transfer Learning | ~28.0 | ~0.84 | ~0.16 | 12.5M | ~40ms |
-| FaceEnhanceNet | ~28.5 | ~0.86 | ~0.14 | 2.1M | ~15ms |
-
-## DVC Usage
-
-```bash
-# Initialize DVC
-dvc init
-
-# Pull data
-dvc pull
-
-# Reproduce pipeline
-dvc repro
-```
-
-## Weights & Biases Integration
-
-All experiments are tracked with W&B:
-- Loss curves and metrics
-- Sample predictions
-- Hyperparameter logging
-- Model checkpoints
+- Support for real-world degradations (noise, blur, compression)
+- Higher scale factors (8×, 16×)
+- Lightweight model variants for mobile deployment
+- Video super-resolution extension
 
 ## License
 
@@ -213,6 +246,21 @@ MIT License
 
 ## Acknowledgments
 
-- FFHQ Dataset: [NVlabs/ffhq-dataset](https://github.com/NVlabs/ffhq-dataset)
-- ESRGAN: [xinntao/ESRGAN](https://github.com/xinntao/ESRGAN)
-- BasicSR: [XPixelGroup/BasicSR](https://github.com/XPixelGroup/BasicSR)
+- **FFHQ Dataset:** [NVlabs/ffhq-dataset](https://github.com/NVlabs/ffhq-dataset)
+- **RCAN Paper:** Zhang et al. "Image Super-Resolution Using Very Deep Residual Channel Attention Networks" (ECCV 2018)
+- **ESRGAN Paper:** Wang et al. "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks" (ECCV 2018)
+- **Perceptual Loss:** Johnson et al. "Perceptual Losses for Real-Time Style Transfer and Super-Resolution" (ECCV 2016)
+
+## Citation
+
+If you use this project in your research, please cite:
+
+```bibtex
+@misc{face-super-resolution,
+  author = {Tomasz Pres},
+  title = {Face Super-Resolution with Deep Learning},
+  year = {2026},
+  publisher = {GitHub},
+  url = {https://github.com/tomasz-pres/face-super-resolution}
+}
+```

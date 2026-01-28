@@ -1,0 +1,107 @@
+# Stage 2: SSIM Fine-tuning (Epochs 100-149)
+# Added SSIM loss for structural similarity (did not bring significant improvements)
+
+# Project settings
+project:
+  name: "face-sr-stage2-ssim"
+  seed: 42
+  device: "cuda"
+
+# Data settings
+data:
+  data_root: "./data/processed/"
+  hr_size: 256
+  lr_size: 64
+  scale_factor: 4
+  batch_size: 48
+  num_workers: 16
+  pin_memory: true
+
+# Augmentation settings
+augmentation:
+  horizontal_flip: 0.5
+  random_rotate90: 0.0
+  random_crop:
+    hr_patch_size: 256
+    lr_patch_size: 64
+
+# Model settings
+model:
+  type: "custom"
+
+  custom:
+    num_channels: 64
+    num_groups: 6
+    blocks_per_group: 10
+    reduction_ratio: 4
+    upscale_factor: 4
+
+# Loss settings - Stage 2: SSIM fine-tuning
+loss:
+  l1_weight: 1.0
+  perceptual_weight: 0.5
+  ssim_weight: 0.2  # Added SSIM
+
+  use_charbonnier: false
+  charbonnier_eps: 1.0e-3
+
+  perceptual:
+    layers: ["conv3_4"]
+    normalize: true
+
+  gan:
+    weight: 0.0  # No GAN in Stage 2
+    type: "vanilla"
+    d_lr: 0.0001
+    d_weight_decay: 0.0
+    d_updates_per_g: 1
+    start_epoch: 999999  # Disabled
+    d_channels: 64
+    d_use_bn: true
+
+# Training settings
+training:
+  epochs: 50
+  optimizer:
+    type: "adam"
+    lr: 1.0e-05  # Lower LR for fine-tuning
+    weight_decay: 0.0
+    betas: [0.9, 0.999]
+
+  scheduler:
+    type: "step"
+    step_size: 1000
+    gamma: 1.0
+
+  gradient_clip: 0.5
+  accumulation_steps: 1
+  mixed_precision: false
+
+  early_stopping:
+    patience: 30
+    metric: "val_loss"
+    mode: "min"
+
+# Checkpointing
+checkpoint:
+  save_dir: "./checkpoints"
+  save_every: 2
+  save_best: true
+  resume: "checkpoints/big_model_after_epoch_100.pth"  # Resume from Stage 1
+
+# Logging
+logging:
+  wandb:
+    enabled: false
+    project: "face-super-resolution"
+    entity: null
+    log_every: 100
+    log_images_every: 5
+
+  console:
+    log_every: 10
+
+# Evaluation settings
+evaluation:
+  metrics: ["psnr", "ssim"]
+  test_batch_size: 1

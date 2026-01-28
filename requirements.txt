@@ -1,0 +1,53 @@
+# =============================================================================
+# Face Super-Resolution Project - Requirements
+# =============================================================================
+
+# Core ML Frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+pytorch-lightning>=2.0.0
+
+# Data Processing & Augmentation
+albumentations>=1.3.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+h5py>=3.9.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Super-Resolution Models
+timm>=0.9.0
+basicsr>=1.4.2
+
+# Metrics & Evaluation
+torchmetrics>=1.0.0
+lpips>=0.1.4
+pytorch-fid>=0.3.0
+scikit-image>=0.21.0
+
+# MLOps & Experiment Tracking
+wandb>=0.15.0
+dvc>=3.0.0
+
+# Demo & API
+gradio>=4.0.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+tqdm>=4.65.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+scipy>=1.10.0
+
+# Development & Testing
+pytest>=7.3.0
+black>=23.0.0
+flake8>=6.0.0
+
+#app
+gradio>=6.4.0

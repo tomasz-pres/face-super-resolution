@@ -1,0 +1,65 @@
+# Data files (large datasets)
+data/
+*.zip
+*.tar.gz
+*.h5
+*.hdf5
+
+# Checkpoints and outputs (will mount as volumes)
+checkpoints/*.pth
+outputs/
+big_model_training_logs/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Documentation (not needed for runtime)
+REPORT.md
+REPORT_GUIDELINES.md
+PRD_SuperResolution_FFHQ.md
+*.pdf
+
+# Logs
+*.log
+training_history.csv
+training_history.json
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# Testing
+tests/
+notebooks/
+
+# Zip files
+*.zip
+face-sr-code.zip
+fine-tuning.zip
