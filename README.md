@@ -227,7 +227,7 @@ Stage-specific configurations are available in `configs/stages/`:
 - Adversarial Loss: GAN training for realism
 
 # Models link download
-[models](https://drive.google.com/file/d/1Oy2Ig-n5M8JaJV26z4pQi5S2wZ8v3-7D/view?usp=sharing)
+[models](https://drive.google.com/file/d/1JNjrPtgZ9TAHlbxNuFYGGD7qd_pQtb0s/view?usp=sharing)
 
 ## License
 
